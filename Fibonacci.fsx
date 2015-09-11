@@ -23,7 +23,7 @@ let fib1 n =                    // function syntax. n and return are deduced
             y <- y'
         y
 
-fib1 10 // test
+fib1 14 // test
 
 
 // 1.1 Refactor to use simple pattern matching
@@ -34,13 +34,12 @@ let fib1_1 n =
     | _ ->                          // don't need matched value here (already have it)
         let mutable x, y = 0, 1     // multi value assignment (actually a pattern match on a tuple)
         for i in [3..n] do
-            let x' = y
-            let y' = x+y
+            let x', y' = y, x+y
             x <- x'
             y <- y'
         y
 
-fib1_1 10 // test
+fib1_1 14 // test
 
 
 // 2. Recursive version
@@ -51,11 +50,12 @@ let rec fib2 n = // need 'rec' keyword
     | _ when n < 1 -> failwith "n must be at least 1"
     | 1 -> 0
     | 2 -> 1
-    | m ->  fib2(m-1) + fib2 (m-2)
+    | _ ->  fib2(n-1) + fib2 (n-2)
 
-fib2 10 // test
-List.map fib2 [1..10] // We can get all of the first 10 fibonacci numbers like this
-[1..10] |> List.map fib2 // but more idiomatic like this
+fib2 14 // test
+List.map fib2 [1..14] // We can get all of the first 10 fibonacci numbers like this
+[1..14] |> List.map fib2 // but more idiomatic like this
+
 
 // 3. Since we're calculating all values to nth as we go
 // we may as well return them as a list
@@ -70,7 +70,7 @@ let rec fib3 n =
         // Functional lists are singly linked. In this case we always want the values at the other end
         // so getting them is a bit awkward (cleaner way shortly...)
 
-fib3 10 // test
+fib3 14 // test
 
 
 // 4. If we're ok for the list to be backwards we can
@@ -84,13 +84,13 @@ let rec fib4 n =
         let a = fib4 (n-1)
         a.Head + a.Tail.Head :: a
 
-fib4 10  // test
-fib4 10 |> List.rev  // We can reverse the list like this
+fib4 14  // test
+fib4 14 |> List.rev  // We can reverse the list like this
 
 // 4.1 We can wrap that up in a function
 let fib4_1 n = fib4 n |> List.rev
 
-fib4_1 10 // test
+fib4_1 14 // test
 
 
 // 4.2 Or keep the reversed list generator encapsulated
@@ -101,33 +101,31 @@ let fib4_2 n =
         | 1 -> [0]
         | 2 -> [1;0]
         | _ ->
-            let a = fib4 (n-1)
+            let a = rfib (n-1)
             a.Head + a.Tail.Head :: a
     rfib n |> List.rev
 
-fib4_2 10 // test
+fib4_2 14 // test
 
-
-// 5. We can also generate a sequence lazily
-let fib5 () =
-    let rec fibGenerator i j =              // Helper function which operators on last two values
-        seq {                               // Sequence expression
-            yield j                         // Yield a single value
-            yield! fibGenerator j (i+j)     // Yield! to yield a sequence
-        }
-    seq {
-        yield 0
-        yield! fibGenerator 0 1
-    }
-
-fib5() |> Seq.take 10 |> Seq.toList // test
-
-
-// 6. if we reintroduce the n parameter we can avoid the recursion
-// by using higher level functions (but also no longer lazy)
-let fib6 n =
+// 5. We can avoid the recursion by using higher level functions
+let fib5 n =
     {3..n} // generate a range to operate on
     |> Seq.fold( fun f  _ -> (f.Head + f.Tail.Head) :: f ) [1;0]
     |> List.rev
 
-fib6 10 // test
+fib5 14 // test
+
+// 6. We can also generate a sequence lazily
+let fib6 () =
+    let rec fib i j =              // Helper function which operators on last two values
+        seq {                      // Sequence expression
+            yield j                // Yield a single value
+            yield! fib j (i+j)     // Yield! to yield a sequence
+        }
+    seq {
+        yield 0
+        yield! fib 0 1
+    }
+
+fib6() |> Seq.take 14 |> Seq.toList // test
+
